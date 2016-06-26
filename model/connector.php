@@ -96,7 +96,7 @@ class Connector
             return $this->resultado;
         }
     }
-
+    #--------------------------CREAR NUEVO REGISTRO --------------------------------------------------------
     final public function InsertIn($tableName, $conn, $column_name)
     {
         $insert_sentence;
@@ -139,6 +139,41 @@ class Connector
             $this->resultado['conexion'] = false;
             $this->resultado['mensaje']  = $e->getMessage();
         }
+        return $this->resultado;
+    }
+
+    final public function DeleteIt($conn, $table_name, $column_name, $value)
+    {
+        $query_delete;
+        $query_select;
+        $result_select;
+        $sentence_exec;
+        $resultado;
+        $this->conn        = $conn;
+        $this->table_name  = $table_name;
+        $this->column_name = $column_name;
+        $this->value       = $value;
+
+        $this->query_select  = "SELECT FROM ".$this->table_name." WHERE ".$this->column_name."= '".$this->value."';";
+        $this->result_select = pg_fetch_all(pg_query($this->conn, $this->query_select));
+        if (!$this->result_select) {
+            $this->resultado['conexion'] = false;
+            $this->resultado['mensaje']  = "El registro no existe!";
+        } else {
+            try {
+                $this->query_delete  = "DELETE FROM ".$this->table_name." WHERE ".$this->column_name."= '".$this->value."';";
+                $this->sentence_exec = pg_query($this->conn, $this->query_delete);
+                if (!$this->sentence_exec) {
+                    throw new Exception("Error al eliminar registro ".$this->value);
+                }
+                $this->resultado['conexion'] = true;
+                $this->resultado['mensaje']  = "Registro eliminado con éxito!";
+            } catch (Exception $e) {
+                $this->resultado['conexion'] = false;
+                $this->resultado['mensaje']  = $e->getMessage();
+            }
+        }
+        $this->resultado['contenido'] = 0;
         return $this->resultado;
     }
 
