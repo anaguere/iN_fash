@@ -61,27 +61,38 @@ class Connector
         return $this->resultado;
     }
 
-    final public function SelectAll($tableName, $conn)
+    final public function SelectIn($tableName, $conn, $column_selection)
     {
-        $query1;
+        $query;
+        $sentence_exec;
         $main_table_result;
-        $this->tableName = $tableName;
-        $this->conn      = $conn;
+        $this->tableName        = $tableName;
+        $this->conn             = $conn;
+        $this->column_selection = $column_selection;
         $foreign_keys;
         try {
-            $this->query1 = pg_query($this->conn, "SELECT * FROM ".$this->tableName);
-            if (!$this->query1) {
+            if (!$this->column_selection) {
+                $this->query = "SELECT * FROM ".$this->tableName.";";
+            } else {
+                $this->query = "SELECT * FROM ".$this->tableName." WHERE ".$this->column_selection[0]."='".$this->column_selection[1]."';";
+            }
+
+            $this->main_table_result = pg_fetch_all(pg_query($this->conn, $this->query));
+            if (!$this->main_table_result) {
                 throw new Exception("Error al acceder a la tabla".$this->tableName);
             }
-            $this->main_table_result = pg_fetch_all($this->query1);
-            $this->foreign_keys      = $this->ForeignKeys($this->tableName, $this->conn);
+
+            $this->foreign_keys = $this->ForeignKeys($this->tableName, $this->conn);
             if ($this->foreign_keys['conexion']) {
                 $this->foreign_keys = $this->foreign_keys['contenido'];
                 for ($i = 0; $i < count($this->foreign_keys); $i++) {
                     for ($j = 0; $j < count($this->main_table_result); $j++) {
-                        $dependency_inyection                                                           = pg_query($this->conn, "SELECT * FROM ".$this->foreign_keys[$i]['foreign_table_name']." WHERE ".$this->foreign_keys[$i]['foreign_table_column_name']."=".$this->main_table_result[$j][$this->foreign_keys[$i]['main_table_column_name']]);
-                        $dependency_inyection_result                                                    = pg_fetch_all($dependency_inyection);
-                        $keys_array                                                                     = array_keys($dependency_inyection_result[0]);
+                        $dependency_inyection = pg_query($this->conn, "SELECT * FROM ".$this->foreign_keys[$i]['foreign_table_name']." WHERE ".$this->foreign_keys[$i]['foreign_table_column_name']."=".$this->main_table_result[$j][$this->foreign_keys[$i]['main_table_column_name']]);
+
+                        $dependency_inyection_result = pg_fetch_all($dependency_inyection);
+
+                        $keys_array = array_keys($dependency_inyection_result[0]);
+
                         $this->main_table_result[$j][$this->foreign_keys[$i]['main_table_column_name']] = $dependency_inyection_result;
                     }
                 }
@@ -211,6 +222,28 @@ class Connector
             }
             $this->resultado['conexion'] = true;
             $this->resultado['mensaje']  = "Actualizado con éxito!";
+        } catch (Exception $e) {
+            $this->resultado['conexion'] = false;
+            $this->resultado['mensaje']  = $e->getMessage();
+        }
+        $this->resultado['contenido'] = 0;
+        return $this->resultado;
+    }
+
+    #------------------------------- CERRAR CONEXION -------------------------------------------
+
+    final public function CloseIn($conn)
+    {
+        $this->conn = $conn;
+        $query_close;
+        $resultado;
+        try {
+            $this->query_close = pg_close($this->conn);
+            if (!$this->query_close) {
+                throw new Exception("Ha ocurrido un error al procesar el cierre de la conexión!");
+            }
+            $this->resultado['conexion'] = true;
+            $this->resultado['mensaje']  = "Ha finalizado la conexión SQL";
         } catch (Exception $e) {
             $this->resultado['conexion'] = false;
             $this->resultado['mensaje']  = $e->getMessage();
