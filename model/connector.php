@@ -96,7 +96,7 @@ class Connector
             return $this->resultado;
         }
     }
-    #--------------------------CREAR NUEVO REGISTRO --------------------------------------------------------
+    #------------------------------- CREAR NUEVO REGISTRO -------------------------------------------
     final public function InsertIn($tableName, $conn, $column_name)
     {
         $insert_sentence;
@@ -142,6 +142,8 @@ class Connector
         return $this->resultado;
     }
 
+    #------------------------------- ELIMINAR REGISTRO -------------------------------------------
+
     final public function DeleteIt($conn, $table_name, $column_name, $value)
     {
         $query_delete;
@@ -172,6 +174,46 @@ class Connector
                 $this->resultado['conexion'] = false;
                 $this->resultado['mensaje']  = $e->getMessage();
             }
+        }
+        $this->resultado['contenido'] = 0;
+        return $this->resultado;
+    }
+
+    #------------------------------- ACTUALIZAR REGISTRO -------------------------------------------
+
+    final public function UpdateIn($conn, $table_name, $column_name, $id_name)
+    {
+        $cant_columns;
+        $query_update;
+        $sentence_exec;
+        $resultado;
+        $values;
+        $this->conn        = $conn;
+        $this->table_name  = $table_name;
+        $this->column_name = $column_name;
+        $this->id_name     = $id_name;
+
+        $cant_columns = count($this->column_name);
+        $k            = 0;
+        foreach ($this->column_name as $clave => $valor) {
+            $k++;
+            if ($k < $cant_columns) {
+                $this->values = $this->values.$clave."='".$valor."',";
+            } else {
+                $this->values = $this->values.$clave."='".$valor."'";
+            }
+        }
+        try {
+            $this->query_update  = "UPDATE ".$this->table_name."  SET ".$this->values." WHERE ".$id_name[0]."=".$id_name[1];
+            $this->sentence_exec = pg_query($this->conn, $this->query_update);
+            if (!$this->sentence_exec) {
+                throw new Exception("Ha ocurrido un error al tratar de actualizar el registro!");
+            }
+            $this->resultado['conexion'] = true;
+            $this->resultado['mensaje']  = "Actualizado con éxito!";
+        } catch (Exception $e) {
+            $this->resultado['conexion'] = false;
+            $this->resultado['mensaje']  = $e->getMessage();
         }
         $this->resultado['contenido'] = 0;
         return $this->resultado;
