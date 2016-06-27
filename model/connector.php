@@ -9,6 +9,8 @@ class Connector
     {
     }
 
+    #------------------------------- CONECTAR A BASE DE DATOS -------------------------------------------
+
     final public function ConexionBD()
     {
         $this->connector = json_decode(file_get_contents("../data/connectorData.json"), true);
@@ -28,6 +30,8 @@ class Connector
             return ($this->resultado);
         }
     }
+
+    #------------------------------- VALIDAR CLAVES FORANEAS -------------------------------------------
 
     public function ForeignKeys($tableName, $conn)
     {
@@ -61,7 +65,9 @@ class Connector
         return $this->resultado;
     }
 
-    final public function SelectIn($tableName, $conn, $column_selection)
+    #------------------------------- SELECCIONAR REGISTRO -------------------------------------------
+
+    final public function SelectIn($conn, $tableName, $column_selection)
     {
         $query;
         $sentence_exec;
@@ -108,7 +114,7 @@ class Connector
         }
     }
     #------------------------------- CREAR NUEVO REGISTRO -------------------------------------------
-    final public function InsertIn($tableName, $conn, $column_name)
+    final public function InsertIn($conn, $tableName, $column_name)
     {
         $insert_sentence;
         $sentence_exec;
@@ -167,7 +173,7 @@ class Connector
         $this->column_name = $column_name;
         $this->value       = $value;
 
-        $this->query_select  = "SELECT FROM ".$this->table_name." WHERE ".$this->column_name."= '".$this->value."';";
+        $this->query_select  = "SELECT * FROM ".$this->table_name." WHERE ".$this->column_name."= '".$this->value."';";
         $this->result_select = pg_fetch_all(pg_query($this->conn, $this->query_select));
         if (!$this->result_select) {
             $this->resultado['conexion'] = false;

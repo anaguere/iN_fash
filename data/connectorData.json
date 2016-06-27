@@ -1,7 +1,7 @@
 {
 	"host":"localhost",
 	"port":"5432",
-	"dbname":"json",
-	"user":"postgres",
-	"password":"123"
+	"dbname":"in_fash_db",
+	"user":"in_fash_user_db",
+	"password":"0000"
 }
