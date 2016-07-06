@@ -13,21 +13,21 @@ class Connector
 
     final public function ConexionBD()
     {
-        $this->connector = json_decode(file_get_contents("../data/connectorData.json"), true);
-        $this->conn      = pg_connect("host=".$this->connector['host']." port=".$this->connector['port']." dbname=".$this->connector['dbname']." user=".$this->connector['user']." password=".$this->connector['password']);
+        $connector = json_decode(file_get_contents("../data/connectorData.json"), true);
+        $conn      = pg_connect("host=".$connector['host']." port=".$connector['port']." dbname=".$connector['dbname']." user=".$connector['user']." password=".$connector['password']);
         try {
-            if (!$this->conn) {
+            if (!$conn) {
                 throw new Exception("Ha ocurrido un problema al conectarse a la base de datos!");
             }
-            $this->resultado['conexion'] = true;
-            $this->resultado['mensaje']  = "Conexión satisfactoria";
-            $this->resultado['conexion'] = $this->conn;
-            return ($this->resultado);
+            $resultado['conexion'] = true;
+            $resultado['mensaje']  = "Conexión satisfactoria";
+            $resultado['conexion'] = $conn;
+            return ($resultado);
         } catch (Exception $e) {
-            $this->resultado['conexion'] = false;
-            $this->resultado['mensaje']  = $e->getMessage();
+            $resultado['conexion'] = false;
+            $resultado['mensaje']  = $e->getMessage();
 
-            return ($this->resultado);
+            return ($resultado);
         }
     }
 
@@ -67,20 +67,20 @@ class Connector
 
     #------------------------------- SELECCIONAR REGISTRO -------------------------------------------
 
-    final public function SelectIn($conn, $tableName, $column_selection)
+    final public function SelectIn($conn, $tableName, $array_insertion)
     {
         $query;
         $sentence_exec;
         $main_table_result;
-        $this->tableName        = $tableName;
-        $this->conn             = $conn;
-        $this->column_selection = $column_selection;
+        $this->tableName       = $tableName;
+        $this->conn            = $conn;
+        $this->array_insertion = $array_insertion;
         $foreign_keys;
         try {
-            if (!$this->column_selection) {
+            if (!$this->array_insertion) {
                 $this->query = "SELECT * FROM ".$this->tableName.";";
             } else {
-                $this->query = "SELECT * FROM ".$this->tableName." WHERE ".$this->column_selection[0]."='".$this->column_selection[1]."';";
+                $this->query = "SELECT * FROM ".$this->tableName." WHERE ".$this->array_insertion[0]."='".$this->array_insertion[1]."';";
             }
 
             $this->main_table_result = pg_fetch_all(pg_query($this->conn, $this->query));
@@ -258,5 +258,30 @@ class Connector
         return $this->resultado;
     }
 
+    final public function DataBaseIn($conn, $schema_name)
+    {
+        $conn        = $conn;
+        $schema_name = $schema_name;
+        $resultado;
+        $query = "SELECT DISTINCT ON  (ic.column_name) ic.column_name, it.table_name,  itc.constraint_type AS keys, ic.is_nullable AS is_null, ic.data_type AS type, ic.character_maximum_length AS length
+			FROM information_schema.tables AS it
+			INNER JOIN information_schema.columns AS ic ON ic.table_name = it.table_name
+			INNER JOIN information_schema.table_constraints as itc ON itc.table_name =it.table_name
+			WHERE it.table_schema = '".$schema_name."' GROUP BY ic.column_name, itc.constraint_type, ic.is_nullable, ic.data_type, ic.character_maximum_length,it.table_name;
+";
+        try {
+            $sentence_exec = pg_query($conn, $query);
+            if (!$sentence_exec) {
+                throw new Exception("Ha ocurrido un error al realiar consulta SQL!");
+            }
+            $resultado['conexion']  = true;
+            $resultado['mensaje']   = "Conexión realizada con éxito!";
+            $resultado['contenido'] = pg_fetch_all($sentence_exec);
+        } catch (Exception $e) {
+            $resultado['conexion'] = false;
+            $resultado['mensaje']  = $e->getMessage();
+        }
+        return $resultado;
+    }
 };
 
